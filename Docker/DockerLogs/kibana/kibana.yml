@@ -1,0 +1,14 @@
+server.name: "elk.proyectoASIR.local"
+server.host: "kibana"
+
+# SSL
+server.ssl.enabled: true
+server.ssl.certificate: /usr/share/kibana/kibanaSSL/kibana.crt
+server.ssl.key: /usr/share/kibana/kibanaSSL/kibana.key
+
+# Ruta elasticsearch
+elasticsearch.hosts: "http://elasticsearch:9200"
+
+
+
+

@@ -1,0 +1,52 @@
+# recogida de logs
+#filebeat.inputs:
+#  - type: log
+#    paths:
+#      - /usr/share/filebeat/hostlogs/messages      
+#  - type: docker
+#    containers.ids: '*'
+
+filebeat.config.modules:
+  enabled: true
+  path: /usr/share/filebeat/modules.d/*.yml
+
+# modulo apache
+filebeat.modules:
+  - module: system
+    syslog:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/hostlogs/syslog*"]
+    auth:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/hostlogs/auth.log*"]
+  - module: apache2
+    access:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/apachelogs/acceso.log*"]
+    error:
+      enabled: true
+      var.paths: ["/usr/share/filebeat/apachelogs/errores.log*"]
+  
+
+# procesamiento de datos
+processors:  
+  - if: 
+      contains:
+        input.type: "docker"
+    then:
+      - add_docker_metadata: ~
+      - add_tags:
+          tags: [docker]
+          target: "datatype"
+    else:
+      - add_tags:
+          tags: [system]
+          target: "datatype"
+
+# Configuracion de salida de logs
+output.logstash:
+  hosts: ["elk.proyectoASIR.local:4405"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/filebeat/SSL/ca.crt"]
+  ssl.certificate: "/usr/share/filebeat/SSL/client.crt"
+  ssl.key: "/usr/share/filebeat/SSL/client.key"

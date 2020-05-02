@@ -1,0 +1,7 @@
+# imagen de la que partimos
+FROM resystit/bind9
+
+# copiar archivos de configuracion 
+COPY named.conf /etc/bind
+COPY db.proyectoASIR.local /etc/bind
+COPY db.proyectoASIR.local.inv /etc/bind

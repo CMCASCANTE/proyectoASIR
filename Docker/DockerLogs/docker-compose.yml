@@ -1,0 +1,210 @@
+version: '3.6'
+
+# Servicios de Procesamiento y Monitorizacion de Logs
+services:  
+
+  # Servicio de preprocesamiento y filtrado de logs 
+  logstash:
+    image: logstash
+    build:
+      context: ./logstash
+      dockerfile: Dockerfile
+    restart: always
+    volumes:   
+      # Archivos de configuracion         
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true  
+      # Certificados
+      - type: bind
+        source: ./logstash/SSL
+        target: /usr/share/logstash/SSL
+        read_only: true
+    # Variables de entorno
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    ports:
+      - 4405:4405      
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  # Servicio de almacenamiento(base de datos distribuida) y procesamiento de datos
+  elasticsearch:
+    image: elasticsearch
+    build:
+      context: ./elasticsearch
+      dockerfile: Dockerfile   
+    restart: always
+    # Variables de entorno
+    environment:      
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"              
+      discovery.type: single-node    
+    volumes:
+      # datos sobre la configuracion de los nodos
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data      
+    networks:
+      - elk
+        
+
+  # Servicio de visualizacion de logs procesados por elasticsearch
+  kibana:
+    image: kibana
+    build:
+      context: ./kibana
+      dockerfile: Dockerfile   
+    restart: always
+    volumes:
+      # Certificados
+      - type: bind
+        source: ./kibana/kibanaSSL
+        target: /usr/share/kibana/kibanaSSL
+        read_only: true 
+    ports:
+      - 5601:5601
+    networks:
+      - elk
+        
+
+# Servicios de recolecta de datos
+    
+  # logs de docker
+  filebeat:
+    image: filebeat    
+    build:
+      context: ./filebeat
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - elasticsearch
+    volumes:
+      # volumenes para los datos de docker
+      - type: bind
+        source: /var/lib/docker/containers
+        target: /var/lib/docker/containers
+        read_only: true        
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+      # volumen para los logs de sistema
+      - type: bind
+        source: /var/log
+        target: /usr/share/filebeat/hostlogs
+        read_only: true  
+      # Certificados
+      - type: bind
+        source: ./filebeat/SSL
+        target: /usr/share/filebeat/SSL
+        read_only: true    
+      # volumen de apache(servicio web)    
+      - type: volume
+        source: dockerservices_logsWeb
+        target: /usr/share/filebeat/apachelogs
+        read_only: true    
+    network_mode: host  
+
+  # recursos del equipo
+  metricbeat:
+    image: metricbeat    
+    build:
+        context: ./metricbeat
+        dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - elasticsearch
+    volumes:
+        # volumen para los datos de docker
+        - type: bind
+          source: /var/run/docker.sock
+          target: /var/run/docker.sock
+          read_only: true
+        # volumenes de datos del host
+        - type: bind
+          source: /sys/fs/cgroup
+          target: /hostfs/sys/fs/cgroup
+          read_only: true
+        - type: bind
+          source: /proc
+          target: /hostfs/proc
+          read_only: true
+        - type: bind
+          source: /
+          target: /hostfs
+          read_only: true      
+        # Certificados            
+        - type: bind
+          source: ./metricbeat/SSL
+          target: /usr/share/metricbeat/SSL
+          read_only: true        
+    network_mode: host        
+  
+  # logs de red
+  packetbeat:
+    image: packetbeat    
+    build:
+        context: ./packetbeat
+        dockerfile: Dockerfile
+    restart: always  
+    depends_on:
+      - elasticsearch    
+    volumes:  
+        # Certificados
+        - type: bind
+          source: ./packetbeat/SSL
+          target: /usr/share/packetbeat/SSL
+          read_only: true   
+    # Configuraciones necesarias
+    command: ["--strict.perms=false"]
+    cap_add:
+        - NET_RAW
+        - NET_ADMIN      
+    network_mode: host
+
+  # logs de auditoria
+  auditbeat:
+    image: auditbeat
+    build:
+      context: ./auditbeat
+      dockerfile: Dockerfile
+    restart: always  
+    depends_on:
+      - elasticsearch   
+    cap_add: 
+      - AUDIT_CONTROL 
+      - AUDIT_READ
+    pid: "host"
+    volumes:  
+      - type: volume
+        source: dockerservices_vuln
+        target: /usr/share/auditbeat/containerVuln
+        read_only: true
+      # Certificados            
+      - type: bind
+        source: ./auditbeat/SSL
+        target: /usr/share/auditbeat/SSL
+        read_only: true        
+    network_mode: host
+
+
+# red creada para los contenedores de logs
+networks: 
+  elk:
+      driver: bridge    
+      ipam: 
+          driver: default
+          config:
+              - subnet: 172.27.0.0/24                
+  
+# Volumenes para contenedores de logs
+volumes:
+  elasticsearch:
+  dockerservices_logsWeb:
+    external: true
+  dockerservices_vuln:
+    external: true
+  

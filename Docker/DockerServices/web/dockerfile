@@ -1,0 +1,29 @@
+FROM php:apache
+
+# actualizar
+RUN apt update && apt upgrade -y
+
+# modificar la configuracion para añadir la extension pdo de mysql
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+RUN sed -ri -e "s/;extension=pdo_mysql/extension=pdo_mysql/g" $PHP_INI_DIR/php.ini
+
+# Habilitar mods y opciones
+RUN a2enmod rewrite headers
+RUN docker-php-ext-install pdo_mysql
+
+# configuracion web
+COPY apache2.conf /etc/apache2/apache2.conf
+COPY proyectoASIR.conf /etc/apache2/sites-available
+RUN mkdir /var/www/proyectoASIR
+
+# Permisos 
+RUN chown -R www-data:www-data /var/www
+ENV APACHE_RUN_USER www-data
+ENV APACHERUN_GROUP www-data
+
+# Habilitar el sitio web
+RUN a2dissite 000-default.conf
+RUN a2ensite proyectoASIR
+
+# habilitar salida de log por fichero (por defecto tiene link a consola)
+RUN unlink /var/log/apache2/access.log

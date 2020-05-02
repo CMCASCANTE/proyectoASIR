@@ -1,0 +1,95 @@
+version: "3.6"
+# Servicios
+services:
+
+    # Servicio DHCP
+    dhcpd:
+        image: dhcp
+        build:
+            context: dhcp
+            dockerfile: dockerfile
+        restart: always                
+        networks: 
+            - redLocal
+        ports: 
+            - "67:67/udp"
+        volumes: 
+            - leasesDHCP:/var/lib/dhcp
+
+    # Servicio DNS
+    dns:
+        image: bind9
+        build:
+            context: dns
+            dockerfile: dockerfile
+        restart: always  
+        networks: 
+            - redLocal      
+        ports: 
+            - "53:53/udp"  
+
+    # Servicio de Base de Datos
+    db:
+        image: mysql
+        build: 
+            context: database
+            dockerfile: dockerfile
+        restart: always
+        environment:
+            MYSQL_DATABASE: "ASIR"
+            MYSQL_USER: "karlos"
+            MYSQL_PASSWORD: "secret"
+            MYSQL_ROOT_PASSWORD: "secret2"
+        volumes:
+            - dataMysql:/var/lib/mysql
+            - logsMysql:/var/log/mysql
+        networks: 
+            - redLocal        
+    
+    # Servicio Web
+    web:
+        image: apache
+        build:
+            context: web
+            dockerfile: "dockerfile"
+        restart: always
+        depends_on:
+            - db    
+        volumes:
+            - logsWeb:/var/log/apache2
+            - ./web/proyectoASIR:/var/www/proyectoASIR:ro
+        networks: 
+            - redLocal
+        ports: 
+            - "8080:80"       
+
+    # Contenedor vulnerable
+    vulnerable:
+        image: vulnerable
+        build:
+            context: vulnerable
+            dockerfile: "Dockerfile"
+        restart: always
+        stdin_open: true        
+        tty: true 
+        volumes: 
+            - vuln:/tmp        
+        network_mode: host        
+
+# Volumenes de datos
+volumes:
+    leasesDHCP:
+    dataMysql:
+    logsMysql:
+    logsWeb:
+    vuln:
+
+# configuracion de la red
+networks: 
+    redLocal:
+        driver: bridge    
+        ipam: 
+            driver: default
+            config:
+                - subnet: 172.28.0.0/24
+   

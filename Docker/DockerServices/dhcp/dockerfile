@@ -1,0 +1,6 @@
+# imagen de la que partimos
+FROM joebiellik/dhcpd
+
+# copiar archivo de configuracion 
+COPY dhcpd.conf /etc/dhcp
+

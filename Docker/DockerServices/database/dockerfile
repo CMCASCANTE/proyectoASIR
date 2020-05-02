@@ -1,0 +1,6 @@
+# imagen de la que partimos
+FROM mysql
+
+
+# copiar archivo de configuracion 
+COPY mysql.cnf /etc/mysql/conf.d

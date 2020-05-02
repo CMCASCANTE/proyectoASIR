@@ -1,0 +1,20 @@
+# recogida de logs
+filebeat.inputs:
+  - type: log
+    paths:
+      - /var/log/messages
+      - /var/log/*.log  
+
+# procesamiento de datos
+processors:    
+    - add_tags:
+        tags: [system]
+        target: "datatype"
+
+# Configuracion de salida de logs
+output.logstash:
+  hosts: ["elk.proyectoASIR.local:4405"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/etc/filebeat/SSL/ca.crt"]
+  ssl.certificate: "/etc/filebeat/SSL/client.crt"
+  ssl.key: "/etc/filebeat/SSL/client.key"

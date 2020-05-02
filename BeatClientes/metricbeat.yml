@@ -1,0 +1,33 @@
+# modulos 
+metricbeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml    
+    reload.enabled: false
+
+metricbeat.modules:
+  - module: system
+    metricsets:
+      - cpu
+      - load
+      - filesystem
+      - fsstat
+      - memory
+      - network
+      - process
+    enabled: true
+    period: 30s
+    processes: ['.*']  
+
+# procesamiento de datos
+processors:  
+    - add_tags:
+        tags: [system]
+        target: "datatype"
+
+# Configuracion de salida de logs
+output.logstash:
+  hosts: ["elk.proyectoASIR.local:4405"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/etc/metricbeat/SSL/ca.crt"]
+  ssl.certificate: "/etc/metricbeat/SSL/client.crt"
+  ssl.key: "/etc/metricbeat/SSL/client.key"

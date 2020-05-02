@@ -1,0 +1,71 @@
+# modulos 
+metricbeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml    
+    reload.enabled: false
+
+metricbeat.modules:
+  - module: system
+    metricsets:
+      - cpu
+      - load  
+      - memory
+      - network
+      - process
+      - process_summary
+      - core
+      - diskio
+      - socket
+    enabled: true
+    period: 10s
+    processes: ['.*']
+    
+  - module: system
+    period: 1m
+    metricsets:
+      - filesystem
+      - fsstat
+    processors:
+    - drop_event.when.regexp:
+        system.filesystem.mount_point: '^/(sys|cgroup|proc|dev|etc|host|lib)($|/)'
+
+
+  - module: docker
+    metricsets:
+      - container
+      - cpu
+      - diskio
+      - event
+      - healthcheck
+      - info
+      - image
+      - memory
+      - network
+    hosts: ["unix:///var/run/docker.sock"]
+    period: 10s
+    enabled: true  
+
+# procesamiento de datos
+processors:
+  - if: 
+      contains:
+        event.module: "docker"
+    then:      
+      - add_tags:
+          tags: [docker]
+          target: "datatype"
+    else:
+      - add_tags:
+          tags: [system]
+          target: "datatype"
+
+# Configuracion de salida de logs
+output.logstash:
+  hosts: ["elk.proyectoASIR.local:4405"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/usr/share/metricbeat/SSL/ca.crt"]
+  ssl.certificate: "/usr/share/metricbeat/SSL/client.crt"
+  ssl.key: "/usr/share/metricbeat/SSL/client.key"
+
+
+  

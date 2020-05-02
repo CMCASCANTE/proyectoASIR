@@ -1,0 +1,39 @@
+# interfaces para monitorizar
+packetbeat.interfaces.device: any
+packetbeat.flows:
+  timeout: 30s
+  period: 10s
+
+# protocolos a analizar
+packetbeat.protocols:
+  - type: http
+    ports: [80]
+    send_headers: true
+    send_all_headers: true
+  - type: dns
+    ports: [53]
+    include_authorities: true
+    include_additionals: true
+  - type: tls
+    ports: [443,5601]
+    send_certificates: false
+  - type: mysql
+    ports: [3306]
+  - type: dhcpv4
+    ports: [67]
+  - type: icmp
+    enabled: true
+
+# procesamiento de datos
+processors:    
+      - add_tags:
+          tags: [traffic]
+          target: "datatype"
+
+# Configuracion de salida de logs
+output.logstash:
+  hosts: ["elk.proyectoASIR.local:4405"]
+  ssl.enabled: true
+  ssl.certificate_authorities: ["/etc/packetbeat/SSL/ca.crt"]
+  ssl.certificate: "/etc/packetbeat/SSL/client.crt"
+  ssl.key: "/etc/packetbeat/SSL/client.key"
