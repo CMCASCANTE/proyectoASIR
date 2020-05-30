@@ -1,10 +1,10 @@
 # recogida de logs
-#filebeat.inputs:
-#  - type: log
-#    paths:
-#      - /usr/share/filebeat/hostlogs/messages      
-#  - type: docker
-#    containers.ids: '*'
+filebeat.inputs:
+  - type: log
+    paths:
+      - /usr/share/filebeat/hostlogs/messages      
+  - type: docker
+    containers.ids: '*'
 
 filebeat.config.modules:
   enabled: true
@@ -26,7 +26,12 @@ filebeat.modules:
     error:
       enabled: true
       var.paths: ["/usr/share/filebeat/apachelogs/errores.log*"]
-  
+
+  - module: iptables
+    log:
+      enabled: true
+      var.paths: [/usr/share/filebeat/hostlogs/iptables.log]
+      var.input: "file"
 
 # procesamiento de datos
 processors:  

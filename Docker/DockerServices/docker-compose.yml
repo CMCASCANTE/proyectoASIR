@@ -3,7 +3,7 @@ version: "3.6"
 services:
 
     # Servicio DHCP
-    dhcpd:
+    dhcp:
         image: dhcp
         build:
             context: dhcp
@@ -74,7 +74,8 @@ services:
         tty: true 
         volumes: 
             - vuln:/tmp        
-        network_mode: host        
+        networks:
+            - vuln
 
 # Volumenes de datos
 volumes:
@@ -86,6 +87,12 @@ volumes:
 
 # configuracion de la red
 networks: 
+    vuln:
+        driver: bridge    
+        ipam: 
+            driver: default
+            config:
+                - subnet: 172.30.0.0/24
     redLocal:
         driver: bridge    
         ipam: 

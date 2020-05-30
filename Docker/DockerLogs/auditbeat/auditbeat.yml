@@ -1,17 +1,19 @@
 
 # modulos
 auditbeat.modules:
-
-  # - module: auditd
-  #   audit_rules: |
-  #     -w /etc/passwd -p wa -k identity
-  #     -a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
   
   - module: file_integrity
     paths:
       - /usr/share/auditbeat/containerVuln      
     processors:
     - add_cloud_metadata: ~
+
+
+  # - module: auditd
+  #   audit_rules: |
+  #     -w //usr/share/auditbeat/containerVuln -p rwxa -k intruder
+#    -a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
+
 
 # Configuracion de salida de logs
 output.logstash:
@@ -20,3 +22,12 @@ output.logstash:
   ssl.certificate_authorities: ["/usr/share/auditbeat/SSL/ca.crt"]
   ssl.certificate: "/usr/share/auditbeat/SSL/client.crt"
   ssl.key: "/usr/share/auditbeat/SSL/client.key"
+
+
+  # - module: auditd
+  #   audit_rules: |
+  #     -w /etc/passwd -p wa -k identity
+  #     -a always,exit -F arch=b32 -S open,creat,truncate,ftruncate,openat,open_by_handle_at -F exit=-EPERM -k access
+  
+  
+  

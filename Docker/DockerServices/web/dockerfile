@@ -1,3 +1,4 @@
+# imagen de la que partimos
 FROM php:apache
 
 # actualizar

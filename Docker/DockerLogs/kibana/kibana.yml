@@ -9,6 +9,6 @@ server.ssl.key: /usr/share/kibana/kibanaSSL/kibana.key
 # Ruta elasticsearch
 elasticsearch.hosts: "http://elasticsearch:9200"
 
-
-
+elasticsearch.username: "kibana"
+elasticsearch.password: "llave001"
 
